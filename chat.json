@@ -1,0 +1,109 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v6.1.0.json",
+  "description": "Text message layout with wrapped text and alternating left/right alignment, with Copilot label for left-side messages and dynamic spacing in ascending order.",
+  "data": {
+    "name": "dataset"
+  },
+  "transform": [
+    {
+      "calculate": "datum.index % 2 === 0 ? 'right' : 'left'",
+      "as": "side"
+    },
+    {
+      "calculate": "datum.side === 'left' ? -1 : 0",
+      "as": "xOffset"
+    },
+    {
+      "calculate": "join(split(datum.message, /(.{1,60})(\\s+|$)/g), '\\n')",
+      "as": "wrappedMessage"
+    },
+    {
+      "calculate": "ceil(length(datum.wrappedMessage) / 60)",
+      "as": "lineCount"
+    },
+    {
+      "window": [{"op": "sum", "field": "lineCount", "as": "cumulativeLines"}],
+      "sort": [{"field": "index", "order": "descending"}]
+    },
+    {
+      "calculate": "datum.cumulativeLines * 25",
+      "as": "yOffset"
+    }
+  ],
+  "encoding": {
+    "y": {
+      "field": "yOffset",
+      "type": "quantitative",
+      "axis": null
+    }
+  },
+  "layer": [
+    {
+      "mark": {
+        "type": "text",
+        "align": "left",
+        "baseline": "middle",
+        "lineBreak": "\n",
+        "tooltip": true,
+        "fill": "black",
+        "background": "lightgrey",
+        "cornerRadius": 10,
+        "dx": 0,
+        "fontSize": 20,
+        "fontWeight": "normal"
+      },
+      "encoding": {
+        "x": {
+          "field": "xOffset",
+          "type": "quantitative",
+          "scale": { "domain": [-1.5, 1.5] },
+          "axis": null
+        },
+        "xOffset": {
+          "field": "xOffset",
+          "mult": 60
+        },
+        "text": {
+          "field": "wrappedMessage"
+        }
+      }
+    },
+    {
+      "transform": [
+        {
+          "filter": "datum.side === 'left'"
+        }
+      ],
+      "mark": {
+        "type": "text",
+        "align": "center",
+        "baseline": "bottom",
+        "dy": -20,
+        "fontWeight": "bold",
+        "fontSize": 22,
+        "fill": "#555"
+      },
+      "encoding": {
+        "x": {
+          "field": "xOffset",
+          "type": "quantitative",
+          "scale": { "domain": [-1.5, 1.5] }
+        },
+        "xOffset": {
+          "field": "xOffset",
+          "mult": 60
+        },
+        "text": { "value": "Copilot" }
+      }
+    }
+  ],
+  "config": {
+    "view": {
+      "stroke": "transparent"
+    },
+    "axis": {
+      "domain": false,
+      "ticks": false
+    }
+  }
+}
